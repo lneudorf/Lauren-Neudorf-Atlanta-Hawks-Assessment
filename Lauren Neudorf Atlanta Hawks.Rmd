@@ -1,0 +1,126 @@
+---
+title: "Lauren Neudorf Atlanta Hawks Data Analyst Interview"
+author: "Lauren Neudorf"
+date: "2023-06-02"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r read}
+setwd("~/Desktop/etc./notes/Stats Method 1/HW")
+library(readxl)
+nbaplayers=read_excel("nbaplayers.xlsx")
+
+```
+Part 1. A (a):
+
+#Filtering/minimizing df for duke players, then for those Duke players drafted before or during 2000, then counting the frequency of the teams. 
+```{r pt1A a}
+duke=nbaplayers[nbaplayers$college=="Duke",]
+duke$year=as.numeric(duke$year)
+duke=duke[,1:7]
+duke=na.omit(duke)
+yearorder=duke[order(duke$year),]
+
+b42000=yearorder[1:17,]
+
+library(vctrs)
+vec_count(b42000$team)
+
+```
+Part 1 A (b):
+
+First, I created a subset of the original df with just even draft years, then I created a subset of that with player names that have a "D", and sorted alphabetically. I then created a third sub dataframe with just first names that start with "D", this df has 110 rows, i.e. there are 110 players that fit this criteria. 
+
+```{r pt1A b}
+
+copydf=nbaplayers
+copydf$year=as.numeric(copydf$year)
+newdata=subset(copydf, copydf$year=="1990"|copydf$year=="1992"|copydf$year=="1994"|copydf$year=="1996"|copydf$year=="1998"|copydf$year=="2000"|copydf$year=="2002"|copydf$year=="2004"|copydf$year=="2006"|copydf$year=="2008"|copydf$year=="2010"|copydf$year=="2012"|copydf$year=="2014"|copydf$year=="2016"|copydf$year=="2018"|copydf$year=="2020")
+library(data.table)
+dnames=newdata[newdata$player %like% "D",]
+dnames=dnames[order(dnames$player),]
+dnames=dnames[12:121,]
+
+```
+
+Part 1 B:
+
+
+First I sorted the df by team and within team, by draft year. Then I created a subset of the df for just first round picks #1-30. Then I created an example of 
+```{r pt1B}
+
+nbaplayers=nbaplayers[order(nbaplayers$team,nbaplayers$year),]
+first.round=subset(nbaplayers,overall_pick<=30)
+
+atl=subset(first.round, team=="ATL")
+plot(atl$year,atl$overall_pick)
+library(ggplot2)
+ggplot(first.round, aes(x =year, y = overall_pick, color = team)) +
+  geom_point() +
+  facet_wrap( ~ team)
+
+
+
+```
+```{r pt2A}
+
+avgWS=read_excel("Avg WS.xlsx")
+
+#preliminary plot
+plot(avgWS$overall_pick,avgWS$`Average of win_shares`)
+
+
+avgWS$overall_pick=as.numeric(avgWS$overall_pick)
+avgWS$`Average of win_shares`=as.numeric(avgWS$`Average of win_shares`)
+y=avgWS$`Average of win_shares`
+x=avgWS$overall_pick
+library(caret)
+
+#apply a local regression, get predicted values i.e the "smoothed out" curve
+modavgWS=loess(y ~ x, data=avgWS, span=.75)
+assigned.values=predict(modavgWS) 
+assigned.valu
+
+
+#scatterplot with regression line overlaid
+plot(avgWS$overall_pick, avgWS$`Average of win_shares`, pch=19, main='Loess Regression Model', xlim=c(0,61), ylim=c(-5,100))
+
+lines(assigned.values, x=avgWS$overall_pick, col='purple')
+
+#create df of these assigned values per pick for future use
+Pick.number=as.data.frame(avgWS$overall_pick)
+assignedvals=as.data.frame(assigned.values)
+values.per.pick=cbind(Pick.number,assignedvals)
+values.per.pick
+
+
+```
+```{r pt2b}
+
+plot(values.per.pick$assigned.values, avgWS$`Average of win_shares`)
+
+
+
+```
+
+##Code Resources Used links
+
+Used to confirm how to use local regression in R:
+
+https://www.statology.org/loess-regression-in-r/
+
+Used to find alternative method to original selected method: 
+
+https://cran.r-project.org/web/packages/lessR/vignettes/Extract.html
+
+To plot the grouped data:
+
+https://stackoverflow.com/questions/15546468/plot-grouped-data-in-r
+
